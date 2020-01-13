@@ -262,24 +262,25 @@ public class Camera2VideoFragment extends Fragment
      * width and height are at least as large as the respective requested values, and whose aspect
      * ratio matches with the specified value.
      *
-     * @param choices     The list of sizes that the camera supports for the intended output class
-     * @param width       The minimum desired width
-     * @param height      The minimum desired height
-     * @param aspectRatio The aspect ratio
+     * @param preview_choices     The list of sizes that the camera supports for the intended output class
+     * @param surface_width       The minimum desired width
+     * @param surface_height      The minimum desired height
+     * @param VideoSize The aspect ratio
      * @return The optimal {@code Size}, or an arbitrary one if none were big enough
      */
-    private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio)
+    private static Size choosePreviewSize(Size[] preview_choices, int surface_width, int surface_height, Size VideoSize)
     {
         // Collect the supported resolutions that are at least as big as the preview Surface
         List<Size> bigEnough = new ArrayList<>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
-        for (Size option : choices)
+        int w = VideoSize.getWidth();
+        int h = VideoSize.getHeight();
+        for (Size preview_size : preview_choices)
         {
-            if (option.getHeight() == option.getWidth() * h / w &&
-                    option.getWidth() >= width && option.getHeight() >= height)
+            // videoSize의 비율과 같고, surface의 Size보다 큰 preview을 찾는다.
+            if (preview_size.getHeight() == preview_size.getWidth() * h / w &&
+                    preview_size.getWidth() >= surface_width && preview_size.getHeight() >= surface_height)
             {
-                bigEnough.add(option);
+                bigEnough.add(preview_size);
             }
         }
 
@@ -291,7 +292,7 @@ public class Camera2VideoFragment extends Fragment
         else
         {
             Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
+            return preview_choices[0];
         }
     }
 
@@ -475,7 +476,7 @@ public class Camera2VideoFragment extends Fragment
      * Tries to open a {@link CameraDevice}. The result is listened by `mStateCallback`.
      */
     @SuppressWarnings("MissingPermission")
-    private void openCamera(int width, int height)
+    private void openCamera(int surface_width, int surface_height)
     {
         if (!hasPermissionsGranted(VIDEO_PERMISSIONS))
         {
@@ -507,8 +508,8 @@ public class Camera2VideoFragment extends Fragment
                 throw new RuntimeException("Cannot get available preview/video sizes");
             }
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
-            mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                    width, height, mVideoSize);
+            mPreviewSize = choosePreviewSize(map.getOutputSizes(SurfaceTexture.class),
+                    surface_width, surface_height, mVideoSize);
 
             int orientation = getResources().getConfiguration().orientation;
             if (orientation == Configuration.ORIENTATION_LANDSCAPE)
@@ -519,7 +520,7 @@ public class Camera2VideoFragment extends Fragment
             {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
-            configureTransform(width, height);
+            configureTransform(surface_width, surface_height);
             mMediaRecorder = new MediaRecorder();
             manager.openCamera(cameraId, mStateCallback, null);
         }
@@ -648,10 +649,10 @@ public class Camera2VideoFragment extends Fragment
      * This method should not to be called until the camera preview size is determined in
      * openCamera, or until the size of `mTextureView` is fixed.
      *
-     * @param viewWidth  The width of `mTextureView`
-     * @param viewHeight The height of `mTextureView`
+     * @param surface_Width  The width of `mTextureView`
+     * @param surface_viewHeight The height of `mTextureView`
      */
-    private void configureTransform(int viewWidth, int viewHeight)
+    private void configureTransform(int surface_Width, int surface_viewHeight)
     {
         Activity activity = getActivity();
         if (null == mTextureView || null == mPreviewSize || null == activity)
@@ -660,7 +661,7 @@ public class Camera2VideoFragment extends Fragment
         }
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         Matrix matrix = new Matrix();
-        RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
+        RectF viewRect = new RectF(0, 0, surface_Width, surface_viewHeight);
         RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
         float centerX = viewRect.centerX();
         float centerY = viewRect.centerY();
@@ -669,8 +670,8 @@ public class Camera2VideoFragment extends Fragment
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
             float scale = Math.max(
-                    (float) viewHeight / mPreviewSize.getHeight(),
-                    (float) viewWidth / mPreviewSize.getWidth());
+                    (float) surface_viewHeight / mPreviewSize.getHeight(),
+                    (float) surface_Width / mPreviewSize.getWidth());
             matrix.postScale(scale, scale, centerX, centerY);
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
         }
