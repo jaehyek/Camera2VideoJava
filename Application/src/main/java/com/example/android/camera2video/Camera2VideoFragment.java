@@ -107,7 +107,7 @@ public class Camera2VideoFragment extends Fragment
     /**
      * Button to record video
      */
-    private Button mButtonVideo;
+    private Button btn_stop_next;
 
     /**
      * A reference to the opened {@link android.hardware.camera2.CameraDevice}.
@@ -307,15 +307,54 @@ public class Camera2VideoFragment extends Fragment
     public void onViewCreated(final View view, Bundle savedInstanceState)
     {
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mButtonVideo = (Button) view.findViewById(R.id.video);
-        mButtonVideo.setOnClickListener(this);
-        view.findViewById(R.id.info).setOnClickListener(this);
+//        btn_stop_next = (Button) view.findViewById(R.id.video);
+//        btn_stop_next.setOnClickListener(this);
+//        view.findViewById(R.id.info).setOnClickListener(this);
+
+
+        btn_stop_next = (Button) view.findViewById(R.id.btn_stop_next);
+        btn_stop_next.setOnClickListener(this);
+
+
+
+        showAlertDialog_StartMeasure();
     }
+
+    //--------------------------------------------------------------------
+    void showAlertDialog_StartMeasure()
+    {
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable()
+        {
+            public void run()
+            {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                //builder.setTitle("");
+                builder.setMessage("Start Measure");
+                builder.setPositiveButton("Ok",
+                        new DialogInterface.OnClickListener()
+                        {
+                            public void onClick(DialogInterface dialog, int which)
+                            {
+                                startRecordingVideo();
+                            }
+                        });
+
+                builder.show();
+            }
+        }, 100);
+    }
+
 
     @Override
     public void onResume()
     {
         super.onResume();
+
+
+        int width = mTextureView.getWidth();
+        int height = mTextureView.getHeight();
+
         startBackgroundThread();
         if (mTextureView.isAvailable())
         {
@@ -340,7 +379,7 @@ public class Camera2VideoFragment extends Fragment
     {
         switch (view.getId())
         {
-            case R.id.video:
+            case R.id.btn_stop_next:
             {
                 if (mIsRecordingVideo)
                 {
@@ -519,6 +558,7 @@ public class Camera2VideoFragment extends Fragment
             else
             {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+//                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             }
             configureTransform(surface_width, surface_height);
             mMediaRecorder = new MediaRecorder();
@@ -760,7 +800,7 @@ public class Camera2VideoFragment extends Fragment
                         public void run()
                         {
                             // UI
-                            mButtonVideo.setText(R.string.stop);
+                            btn_stop_next.setText(R.string.stop);
                             mIsRecordingVideo = true;
 
                             // Start recording
@@ -800,7 +840,7 @@ public class Camera2VideoFragment extends Fragment
     {
         // UI
         mIsRecordingVideo = false;
-        mButtonVideo.setText(R.string.record);
+        btn_stop_next.setText(R.string.record);
         // Stop recording
         mMediaRecorder.stop();
         mMediaRecorder.reset();

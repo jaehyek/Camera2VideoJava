@@ -19,6 +19,8 @@ package com.example.android.camera2video;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.TextureView;
+import android.widget.LinearLayout;
+
 
 /**
  * A {@link TextureView} that can be adjusted to a specified aspect ratio.
@@ -26,8 +28,8 @@ import android.view.TextureView;
 public class AutoFitTextureView extends TextureView
 {
 
-    private int mRatioWidth = 0;
-    private int mRatioHeight = 0;
+    private int mRatioWidth = 3;
+    private int mRatioHeight = 4;
 
     public AutoFitTextureView(Context context)
     {
@@ -77,11 +79,13 @@ public class AutoFitTextureView extends TextureView
         {
             if (width < height * mRatioWidth / mRatioHeight)
             {
-                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+//                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+                setLayoutParams(new LinearLayout.LayoutParams(width, width * mRatioHeight / mRatioWidth));
             }
             else
             {
-                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+//                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+                setLayoutParams(new LinearLayout.LayoutParams(height * mRatioWidth / mRatioHeight , height));
             }
         }
     }
