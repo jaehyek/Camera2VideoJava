@@ -28,8 +28,8 @@ import android.widget.LinearLayout;
 public class AutoFitTextureView extends TextureView
 {
 
-    private int mRatioWidth = 4;
-    private int mRatioHeight = 3;
+    private int mRatioWidth = 3;
+    private int mRatioHeight = 4;
 
     public AutoFitTextureView(Context context)
     {
@@ -63,16 +63,6 @@ public class AutoFitTextureView extends TextureView
         mRatioWidth = width;
         mRatioHeight = height;
         requestLayout();
-    }
-
-    @Override
-    public void setRotation(float rotation)
-    {
-        if (rotation != getRotation())
-        {
-            super.setRotation(rotation);
-            requestLayout();
-        }
     }
 
     @Override

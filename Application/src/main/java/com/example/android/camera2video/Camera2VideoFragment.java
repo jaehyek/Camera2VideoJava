@@ -557,10 +557,8 @@ public class Camera2VideoFragment extends Fragment
             }
             else
             {
-//                mTextureView.setRotation(mSensorOrientation);
-                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
 //                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-
             }
             configureTransform(surface_width, surface_height);
             mMediaRecorder = new MediaRecorder();
@@ -737,8 +735,7 @@ public class Camera2VideoFragment extends Fragment
         mMediaRecorder.setOutputFile(mNextVideoAbsolutePath);
         mMediaRecorder.setVideoEncodingBitRate(10000000);
         mMediaRecorder.setVideoFrameRate(30);
-//        mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-        mMediaRecorder.setVideoSize(mVideoSize.getHeight(), mVideoSize.getWidth());
+        mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -773,8 +770,7 @@ public class Camera2VideoFragment extends Fragment
             setUpMediaRecorder();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
-//            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            texture.setDefaultBufferSize(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             List<Surface> surfaces = new ArrayList<>();
 
