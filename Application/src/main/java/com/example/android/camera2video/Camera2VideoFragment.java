@@ -252,7 +252,7 @@ public class Camera2VideoFragment extends Fragment
     {
         for (Size size : choices)
         {
-            Log.d(TAG, String.format("Video size:%d x %d", size.getWidth(), size.getHeight()));
+//            Log.d(TAG, String.format("Video size:%d x %d", size.getWidth(), size.getHeight()));
             if ( size.getWidth() <= 1080 && size.getHeight() <= 1080 && size.getWidth() == size.getHeight() * 4 / 3  )
             {
                 return size;
@@ -281,7 +281,7 @@ public class Camera2VideoFragment extends Fragment
         int h = VideoSize.getHeight();
         for (Size preview_size : preview_choices)
         {
-            Log.d(TAG, String.format("Preview size:%d x %d", preview_size.getWidth(), preview_size.getHeight()));
+            //Log.d(TAG, String.format("Preview size:%d x %d", preview_size.getWidth(), preview_size.getHeight()));
             // videoSize의 비율과 같고, surface의 Size보다 큰 preview을 찾는다.
             if (preview_size.getHeight() == preview_size.getWidth() * h / w &&
                     preview_size.getWidth() >= surface_width && preview_size.getHeight() >= surface_height)
@@ -320,8 +320,6 @@ public class Camera2VideoFragment extends Fragment
 
         btn_stop_next = (Button) view.findViewById(R.id.btn_stop_next);
         btn_stop_next.setOnClickListener(this);
-
-
 
         showAlertDialog_StartMeasure();
     }
@@ -521,6 +519,8 @@ public class Camera2VideoFragment extends Fragment
      * Tries to open a {@link CameraDevice}. The result is listened by `mStateCallback`.
      */
     @SuppressWarnings("MissingPermission")
+
+
     private void openCamera(int surface_width, int surface_height)
     {
         if (!hasPermissionsGranted(VIDEO_PERMISSIONS))
@@ -564,7 +564,6 @@ public class Camera2VideoFragment extends Fragment
             else
             {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
-//                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             }
             configureTransform(surface_width, surface_height);
             mMediaRecorder = new MediaRecorder();
@@ -694,74 +693,6 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
-    public Rect getCropRect()
-    {
-        try {
-            CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            String cameraId = manager.getCameraIdList()[0];
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            float maxzoom = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
-            Rect m = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-
-            int width, height ;
-            int orientation = getResources().getConfiguration().orientation;
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-            {
-
-                width = m.width();
-                height = m.height();
-            }
-            else
-            {
-                width = m.height();
-                height = m.width();
-            }
-
-            if( width >= height * 4 / 3 )
-            {
-                int new_width = height * 4 / 3 ;
-                int new_x = (width - new_width ) / 2 ;
-                mZoom = new Rect(new_x, 0, new_width, height);
-            }
-            else
-            {
-                int new_height = width * 3 / 4 ;
-                int new_y =  ( height - new_height) / 2 ;
-//                mZoom = new Rect(0, new_y, width,  new_height);
-                mZoom = new Rect(0, 0, m.width()/2,  m.height());
-            }
-
-//            int minW = (int) (m.width() / maxzoom);
-//            int minH = (int) (m.height() / maxzoom);
-//            int difW = m.width() - minW;
-//            int difH = m.height() - minH;
-//            int cropW = difW /100 *(int)zoom_level;
-//            int cropH = difH /100 *(int)zoom_level;
-//            cropW -= cropW & 3;
-//            cropH -= cropH & 3;
-//            mZoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
-//            ///// if recording video make it square
-//            if (mIsRecordingVideo) {
-//                mZoom = new Rect(cropW, cropH, m.width() - cropW, m.width() - cropW);
-//            }
-//            mZoom = m ;
-
-
-
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "can not access camera",e);
-            throw new RuntimeException("can not access camera.", e);
-        } catch (NullPointerException ex) {
-            Log.e(TAG, "touch logic",ex);
-        }
-
-        return mZoom;
-    }
-
-    private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder)
-    {
-        builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-    }
 
     /**
      * Configures the necessary {@link android.graphics.Matrix} transformation to `mTextureView`.
@@ -769,9 +700,9 @@ public class Camera2VideoFragment extends Fragment
      * openCamera, or until the size of `mTextureView` is fixed.
      *
      * @param surface_Width  The width of `mTextureView`
-     * @param surface_viewHeight The height of `mTextureView`
+     * @param surface_Height The height of `mTextureView`
      */
-    private void configureTransform(int surface_Width, int surface_viewHeight)
+    private void configureTransform(int surface_Width, int surface_Height)
     {
         Activity activity = getActivity();
         if (null == mTextureView || null == mPreviewSize || null == activity)
@@ -779,8 +710,9 @@ public class Camera2VideoFragment extends Fragment
             return;
         }
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
         Matrix matrix = new Matrix();
-        RectF viewRect = new RectF(0, 0, surface_Width, surface_viewHeight);
+        RectF viewRect = new RectF(0, 0, surface_Width, surface_Height);
         RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
         float centerX = viewRect.centerX();
         float centerY = viewRect.centerY();
@@ -789,12 +721,28 @@ public class Camera2VideoFragment extends Fragment
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
             float scale = Math.max(
-                    (float) surface_viewHeight / mPreviewSize.getHeight(),
+                    (float) surface_Height / mPreviewSize.getHeight(),
                     (float) surface_Width / mPreviewSize.getWidth());
             matrix.postScale(scale, scale, centerX, centerY);
+
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+            mTextureView.setTransform(matrix);
         }
-        mTextureView.setTransform(matrix);
+        else
+        {
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+            float scale = Math.max(
+                    (float) surface_Height / bufferRect.height(),
+                    (float) surface_Width / bufferRect.width());
+            matrix.postScale(scale, scale, centerX, centerY);
+            mTextureView.setTransform(matrix);
+
+            mTextureView.setTranslationX((surface_Width-bufferRect.width())/2/scale);
+
+        }
+
+
     }
 
     private void setUpMediaRecorder() throws IOException
