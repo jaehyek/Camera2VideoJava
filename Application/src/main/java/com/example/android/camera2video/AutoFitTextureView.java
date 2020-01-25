@@ -28,8 +28,8 @@ import android.widget.LinearLayout;
 public class AutoFitTextureView extends TextureView
 {
 
-    private int mRatioWidth = 3;
-    private int mRatioHeight = 4;
+    private int mRatioWidth = 4;
+    private int mRatioHeight = 3;
 
     public AutoFitTextureView(Context context)
     {
@@ -56,13 +56,23 @@ public class AutoFitTextureView extends TextureView
      */
     public void setAspectRatio(int width, int height)
     {
-        if (width < 0 || height < 0)
+//        if (width < 0 || height < 0)
+//        {
+//            throw new IllegalArgumentException("Size cannot be negative.");
+//        }
+//        mRatioWidth = width;
+//        mRatioHeight = height;
+//        requestLayout();
+    }
+
+    @Override
+    public void setRotation(float rotation)
+    {
+        if(rotation != getRotation())
         {
-            throw new IllegalArgumentException("Size cannot be negative.");
+            super.setRotation(rotation);
+            requestLayout();
         }
-        mRatioWidth = width;
-        mRatioHeight = height;
-        requestLayout();
     }
 
     @Override
@@ -79,13 +89,13 @@ public class AutoFitTextureView extends TextureView
         {
             if (width < height * mRatioWidth / mRatioHeight)
             {
-//                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
-                setLayoutParams(new LinearLayout.LayoutParams(width, width * mRatioHeight / mRatioWidth));
+                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+//                setLayoutParams(new LinearLayout.LayoutParams(width, width * mRatioHeight / mRatioWidth));
             }
             else
             {
-//                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
-                setLayoutParams(new LinearLayout.LayoutParams(height * mRatioWidth / mRatioHeight , height));
+                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+//                setLayoutParams(new LinearLayout.LayoutParams(height * mRatioWidth / mRatioHeight , height));
             }
         }
     }

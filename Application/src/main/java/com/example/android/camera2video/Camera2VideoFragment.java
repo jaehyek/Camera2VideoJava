@@ -27,6 +27,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -98,6 +99,9 @@ public class Camera2VideoFragment extends Fragment
         INVERSE_ORIENTATIONS.append(Surface.ROTATION_180, 90);
         INVERSE_ORIENTATIONS.append(Surface.ROTATION_270, 0);
     }
+
+    public int zoom_level = 1;
+    public Rect mZoom = null;
 
     /**
      * An {@link AutoFitTextureView} for camera preview.
@@ -248,7 +252,8 @@ public class Camera2VideoFragment extends Fragment
     {
         for (Size size : choices)
         {
-            if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080)
+            Log.d(TAG, String.format("Video size:%d x %d", size.getWidth(), size.getHeight()));
+            if ( size.getWidth() <= 1080 && size.getHeight() <= 1080 && size.getWidth() == size.getHeight() * 4 / 3  )
             {
                 return size;
             }
@@ -276,6 +281,7 @@ public class Camera2VideoFragment extends Fragment
         int h = VideoSize.getHeight();
         for (Size preview_size : preview_choices)
         {
+            Log.d(TAG, String.format("Preview size:%d x %d", preview_size.getWidth(), preview_size.getHeight()));
             // videoSize의 비율과 같고, surface의 Size보다 큰 preview을 찾는다.
             if (preview_size.getHeight() == preview_size.getWidth() * h / w &&
                     preview_size.getWidth() >= surface_width && preview_size.getHeight() >= surface_height)
@@ -622,7 +628,11 @@ public class Camera2VideoFragment extends Fragment
         {
             closePreviewSession();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
+            int width = mTextureView.getWidth();
+            int height = mTextureView.getHeight();
             assert texture != null;
+
+            // choosePreviewSize에서 surface의 Size보다 큰 preview을 찾았기 때문에   mPreviewSize >= mTextureView 이다.
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
@@ -668,7 +678,12 @@ public class Camera2VideoFragment extends Fragment
         }
         try
         {
-            setUpCaptureRequestBuilder(mPreviewBuilder);
+//            mZoom = getCropRect();
+//            mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, mZoom);    // screen aspect ratio을 변경할 수 없다. 단지, width, height중 작은 것을 기준으로 zoom-in될 뿐이다.
+//            setUpCaptureRequestBuilder(mPreviewBuilder);
+
+
+            mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             HandlerThread thread = new HandlerThread("CameraPreview");
             thread.start();
             mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);
@@ -677,6 +692,70 @@ public class Camera2VideoFragment extends Fragment
         {
             e.printStackTrace();
         }
+    }
+
+    public Rect getCropRect()
+    {
+        try {
+            CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            String cameraId = manager.getCameraIdList()[0];
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            float maxzoom = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
+            Rect m = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+
+            int width, height ;
+            int orientation = getResources().getConfiguration().orientation;
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+            {
+
+                width = m.width();
+                height = m.height();
+            }
+            else
+            {
+                width = m.height();
+                height = m.width();
+            }
+
+            if( width >= height * 4 / 3 )
+            {
+                int new_width = height * 4 / 3 ;
+                int new_x = (width - new_width ) / 2 ;
+                mZoom = new Rect(new_x, 0, new_width, height);
+            }
+            else
+            {
+                int new_height = width * 3 / 4 ;
+                int new_y =  ( height - new_height) / 2 ;
+//                mZoom = new Rect(0, new_y, width,  new_height);
+                mZoom = new Rect(0, 0, m.width()/2,  m.height());
+            }
+
+//            int minW = (int) (m.width() / maxzoom);
+//            int minH = (int) (m.height() / maxzoom);
+//            int difW = m.width() - minW;
+//            int difH = m.height() - minH;
+//            int cropW = difW /100 *(int)zoom_level;
+//            int cropH = difH /100 *(int)zoom_level;
+//            cropW -= cropW & 3;
+//            cropH -= cropH & 3;
+//            mZoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
+//            ///// if recording video make it square
+//            if (mIsRecordingVideo) {
+//                mZoom = new Rect(cropW, cropH, m.width() - cropW, m.width() - cropW);
+//            }
+//            mZoom = m ;
+
+
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "can not access camera",e);
+            throw new RuntimeException("can not access camera.", e);
+        } catch (NullPointerException ex) {
+            Log.e(TAG, "touch logic",ex);
+        }
+
+        return mZoom;
     }
 
     private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder)
