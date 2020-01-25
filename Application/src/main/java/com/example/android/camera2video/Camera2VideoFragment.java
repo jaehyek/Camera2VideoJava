@@ -100,8 +100,6 @@ public class Camera2VideoFragment extends Fragment
         INVERSE_ORIENTATIONS.append(Surface.ROTATION_270, 0);
     }
 
-    public int zoom_level = 1;
-    public Rect mZoom = null;
 
     /**
      * An {@link AutoFitTextureView} for camera preview.
